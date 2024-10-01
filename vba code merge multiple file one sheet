@@ -1,0 +1,62 @@
+Sub MergeExcelFilesToOneSheet()
+  Dim fnameList, fnameCurFile As Variant
+  Dim countFiles As Integer
+  Dim wksDestSheet As Worksheet
+  Dim wksCurSheet As Worksheet
+  Dim wbkCurBook, wbkSrcBook As Workbook
+  Dim lastRowDest As Long
+  Dim srcLastRow As Long
+
+  ' Prompt user to select files
+  fnameList = Application.GetOpenFilename(FileFilter:="Microsoft Excel Workbooks (*.xls;*.xlsx;*.xlsm),*.xls;*.xlsx;*.xlsm", Title:="Choose Excel files to merge", MultiSelect:=True)
+
+  If (vbBoolean <> VarType(fnameList)) Then
+
+    If (UBound(fnameList) > 0) Then
+      countFiles = 0
+
+      Application.ScreenUpdating = False
+      Application.Calculation = xlCalculationManual
+
+      ' Set the destination sheet as the active sheet in the current workbook
+      Set wbkCurBook = ActiveWorkbook
+      Set wksDestSheet = wbkCurBook.Sheets(1) ' Change to the desired destination sheet
+
+      ' Start merging data into the destination sheet
+      lastRowDest = wksDestSheet.Cells(wksDestSheet.Rows.Count, "A").End(xlUp).Row
+
+      For Each fnameCurFile In fnameList
+          countFiles = countFiles + 1
+
+          ' Open the source workbook
+          Set wbkSrcBook = Workbooks.Open(Filename:=fnameCurFile)
+
+          ' Use the first sheet of the source workbook
+          Set wksCurSheet = wbkSrcBook.Sheets(1)
+
+          ' Find the last row in the source sheet
+          srcLastRow = wksCurSheet.Cells(wksCurSheet.Rows.Count, "A").End(xlUp).Row
+
+          ' Copy the data from the source sheet to the destination sheet
+          wksCurSheet.Range("A1", wksCurSheet.Cells(srcLastRow, wksCurSheet.Columns.Count).End(xlToLeft)).Copy
+          wksDestSheet.Cells(lastRowDest + 1, 1).PasteSpecial Paste:=xlPasteValues
+
+          ' Update the last row in the destination sheet
+          lastRowDest = wksDestSheet.Cells(wksDestSheet.Rows.Count, "A").End(xlUp).Row
+
+          ' Close the source workbook without saving
+          wbkSrcBook.Close SaveChanges:=False
+
+      Next
+
+      Application.ScreenUpdating = True
+      Application.Calculation = xlCalculationAutomatic
+
+      MsgBox "Processed " & countFiles & " files and merged data into one sheet.", Title:="Merge Excel files"
+    End If
+
+  Else
+      MsgBox "No files selected", Title:="Merge Excel files"
+  End If
+End Sub
+
