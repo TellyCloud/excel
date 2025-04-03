@@ -1,0 +1,35 @@
+Sub InsertRowOnChange()
+    Dim ws As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim colS As Integer, colT As Integer, colU As Integer
+    
+    ' Set the worksheet (modify as needed)
+    Set ws = ActiveSheet
+    
+    ' Define the columns to monitor
+    colS = 19 ' Column S
+    colT = 20 ' Column T
+    colU = 21 ' Column U
+    
+    ' Find the last used row in Column S, T, and U (whichever is greater)
+    lastRow = Application.WorksheetFunction.Max(ws.Cells(ws.Rows.Count, colS).End(xlUp).Row, _
+                                               ws.Cells(ws.Rows.Count, colT).End(xlUp).Row, _
+                                               ws.Cells(ws.Rows.Count, colU).End(xlUp).Row)
+    
+    ' Loop from bottom to top to avoid index shifting
+    For i = lastRow To 2 Step -1
+        ' Check if the value in Column S, T, or U has changed
+        If ws.Cells(i, colS).Value <> ws.Cells(i - 1, colS).Value Or _
+           ws.Cells(i, colT).Value <> ws.Cells(i - 1, colT).Value Or _
+           ws.Cells(i, colU).Value <> ws.Cells(i - 1, colU).Value Then
+           
+            ' Insert a new row
+            ws.Rows(i).Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
+        End If
+    Next i
+    
+    MsgBox "Rows inserted where values changed in Column S, T, or U.", vbInformation, "Process Completed"
+End Sub
+
+
