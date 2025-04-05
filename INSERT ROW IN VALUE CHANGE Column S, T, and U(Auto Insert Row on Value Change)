@@ -2,34 +2,48 @@ Sub InsertRowOnChange()
     Dim ws As Worksheet
     Dim lastRow As Long
     Dim i As Long
-    Dim colS As Integer, colT As Integer, colU As Integer
+    Dim colNumbers() As Integer
+    Dim colLetter As Variant
+    Dim userInput As String
+    Dim maxRow As Long
+    Dim j As Integer
     
-    ' Set the worksheet (modify as needed)
+    ' Set the worksheet
     Set ws = ActiveSheet
     
-    ' Define the columns to monitor
-    colS = 19 ' Column S
-    colT = 20 ' Column T
-    colU = 21 ' Column U
+    ' Ask user for columns to monitor
+    userInput = InputBox("Enter column letters to monitor (e.g., S,T,U):", "Choose Columns")
     
-    ' Find the last used row in Column S, T, and U (whichever is greater)
-    lastRow = Application.WorksheetFunction.Max(ws.Cells(ws.Rows.Count, colS).End(xlUp).Row, _
-                                               ws.Cells(ws.Rows.Count, colT).End(xlUp).Row, _
-                                               ws.Cells(ws.Rows.Count, colU).End(xlUp).Row)
+    ' Exit if no input
+    If userInput = "" Then Exit Sub
     
-    ' Loop from bottom to top to avoid index shifting
-    For i = lastRow To 2 Step -1
-        ' Check if the value in Column S, T, or U has changed
-        If ws.Cells(i, colS).Value <> ws.Cells(i - 1, colS).Value Or _
-           ws.Cells(i, colT).Value <> ws.Cells(i - 1, colT).Value Or _
-           ws.Cells(i, colU).Value <> ws.Cells(i - 1, colU).Value Then
-           
-            ' Insert a new row
-            ws.Rows(i).Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
-        End If
+    ' Split user input into an array
+    Dim colArray As Variant
+    colArray = Split(userInput, ",")
+    
+    ' Convert column letters to numbers
+    ReDim colNumbers(LBound(colArray) To UBound(colArray))
+    For j = LBound(colArray) To UBound(colArray)
+        colNumbers(j) = Columns(Trim(colArray(j))).Column
+    Next j
+    
+    ' Find the last used row in the selected columns
+    maxRow = 1
+    For j = LBound(colNumbers) To UBound(colNumbers)
+        lastRow = ws.Cells(ws.Rows.Count, colNumbers(j)).End(xlUp).Row
+        If lastRow > maxRow Then maxRow = lastRow
+    Next j
+    
+    ' Loop from bottom to top
+    For i = maxRow To 2 Step -1
+        ' Check if any selected column value has changed
+        For j = LBound(colNumbers) To UBound(colNumbers)
+            If ws.Cells(i, colNumbers(j)).Value <> ws.Cells(i - 1, colNumbers(j)).Value Then
+                ws.Rows(i).Insert Shift:=xlDown, CopyOrigin:=xlFormatFromLeftOrAbove
+                Exit For ' Avoid multiple row inserts for the same row
+            End If
+        Next j
     Next i
     
-    MsgBox "Rows inserted where values changed in Column S, T, or U.", vbInformation, "Process Completed"
+    MsgBox "Rows inserted where values changed in selected columns.", vbInformation, "Process Completed"
 End Sub
-
-
