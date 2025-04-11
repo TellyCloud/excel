@@ -1,0 +1,20 @@
+Sub AddSpaceEvery4DigitsToSelection()
+    Dim cell As Range
+    Dim i As Long
+    Dim cleanText As String
+    Dim result As String
+
+    ' Loop through each selected cell
+    For Each cell In Selection
+        If Not IsEmpty(cell.Value) Then
+            cleanText = Replace(cell.Value, " ", "")
+            result = ""
+            
+            For i = 1 To Len(cleanText) Step 4
+                result = result & Mid(cleanText, i, 4) & " "
+            Next i
+            
+            cell.Value = Trim(result)
+        End If
+    Next cell
+End Sub
