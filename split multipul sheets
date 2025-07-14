@@ -1,0 +1,92 @@
+Sub SplitDataByCardName()
+
+    Dim wsSource As Worksheet
+    Dim wsNew As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim cardName As String
+    Dim itemCode As String
+    Dim itemDesc As String
+    Dim opening As Double
+    Dim closing As Double
+    Dim qty As Double
+    Dim value As Double
+    Dim dict As Object
+    Dim key As Variant
+    
+    Set wsSource = ThisWorkbook.Sheets("Sheet1") '📌 source sheet ka naam
+    lastRow = wsSource.Cells(wsSource.Rows.Count, "A").End(xlUp).Row
+    
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Data pe loop
+    For i = 2 To lastRow
+        cardName = wsSource.Cells(i, 2).Value ' CARDNAME column B
+        itemCode = wsSource.Cells(i, 3).Value ' ITEMCODE column C
+        itemDesc = wsSource.Cells(i, 4).Value ' ITEM_DESCRIPTION column D
+        opening = wsSource.Cells(i, 7).Value  ' OPENING column G
+        closing = wsSource.Cells(i, 8).Value  ' CLOSING column H
+        qty = wsSource.Cells(i, 5).Value      ' QUANTITY column E
+        value = wsSource.Cells(i, 6).Value    ' VALUE column F
+        
+        ' Sheet create if not exists
+        If Not WorksheetExists(cardName) Then
+            Set wsNew = ThisWorkbook.Sheets.Add(After:=ThisWorkbook.Sheets(ThisWorkbook.Sheets.Count))
+            wsNew.Name = cardName
+            
+            ' Header
+            With wsNew
+                .Range("A1").Value = "ITEMCODE"
+                .Range("B1").Value = "ITEM_DESCRIPTION"
+                .Range("C1").Value = "OPENING"
+                .Range("D1").Value = "TOTAL_QUANTITY"
+                .Range("E1").Value = "TOTAL_VALUE"
+                .Range("F1").Value = "CLOSING"
+                .Range("A1:F1").Font.Bold = True
+            End With
+        End If
+        
+        Set wsNew = ThisWorkbook.Sheets(cardName)
+        
+        ' Key banaye itemcode ke hisab se
+        key = itemCode
+        
+        ' Check if item already exists
+        If Not dict.exists(cardName & "|" & key) Then
+            ' Naya item add kare
+            With wsNew
+                Dim newRow As Long
+                newRow = .Cells(.Rows.Count, "A").End(xlUp).Row + 1
+                .Cells(newRow, 1).Value = itemCode
+                .Cells(newRow, 2).Value = itemDesc
+                .Cells(newRow, 3).Value = opening
+                .Cells(newRow, 4).Value = qty
+                .Cells(newRow, 5).Value = value
+                .Cells(newRow, 6).Value = closing
+            End With
+            dict.Add cardName & "|" & key, wsNew.Cells(wsNew.Rows.Count, "A").End(xlUp).Row
+        Else
+            ' Existing item me sum kare quantity aur value
+            Dim existingRow As Long
+            existingRow = dict(cardName & "|" & key)
+            wsNew.Cells(existingRow, 4).Value = wsNew.Cells(existingRow, 4).Value + qty
+            wsNew.Cells(existingRow, 5).Value = wsNew.Cells(existingRow, 5).Value + value
+        End If
+        
+    Next i
+    
+    MsgBox "Split and Summary Done!"
+
+End Sub
+
+' Check if worksheet exists
+Function WorksheetExists(ByVal SheetName As String) As Boolean
+    Dim ws As Worksheet
+    WorksheetExists = False
+    For Each ws In ThisWorkbook.Sheets
+        If ws.Name = SheetName Then
+            WorksheetExists = True
+            Exit Function
+        End If
+    Next ws
+End Function
